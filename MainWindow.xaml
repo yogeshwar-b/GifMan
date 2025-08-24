@@ -13,7 +13,22 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid>
+    <Grid ColumnDefinitions="2*,Auto" ColumnSpacing="8" Margin="10,20,10,0">
+        <TextBox x:Name="FilePathTextBox"
+                     PlaceholderText="Select File.."
+                     IsReadOnly="True"
+                 IsHitTestVisible="False"
+                 SelectionHighlightColor="Transparent"
+                 HorizontalAlignment="Stretch"
+                 VerticalAlignment="Top"  
+                 Grid.Column="0"
+
+                 />
+        <Button Name="FilePathSelectButton"
+                Content="Choose File" Click="FilePathSelectButton_Click"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"  
+                Grid.Column="1"/>
 
     </Grid>
 </Window>
