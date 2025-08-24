@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "GifMan (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "GifMan (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
