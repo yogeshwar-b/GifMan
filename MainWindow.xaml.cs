@@ -1,6 +1,8 @@
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
 using System.Threading.Tasks;
+using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
@@ -25,7 +27,8 @@ namespace GifMan
 
             if (appWindow != null)
             {
-                appWindow.Resize(new Windows.Graphics.SizeInt32(1920, 1080));
+                var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
+                appWindow.Resize(new SizeInt32(displayArea.WorkArea.Width / 2, displayArea.WorkArea.Height / 2));
             }
         }
 
@@ -42,7 +45,7 @@ namespace GifMan
 
             if (file != null)
             {
-                FilePathTextBox.Text = file.Path; 
+                FilePathTextBox.Text = file.Path;
             }
             else
             {
