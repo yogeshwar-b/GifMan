@@ -1,34 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Window
-    x:Class="GifMan.MainWindow"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:GifMan"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Title="GifMan">
+<Window x:Class="GifMan.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:GifMan"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="GifMan">
 
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid ColumnDefinitions="2*,Auto" ColumnSpacing="8" Margin="10,20,10,0">
+    <Grid ColumnDefinitions="2*,Auto"
+          ColumnSpacing="8"
+          RowSpacing="8"
+          Margin="10,20,10,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
         <TextBox x:Name="FilePathTextBox"
-                     PlaceholderText="Select File.."
-                     IsReadOnly="True"
+                 PlaceholderText="Select File.."
+                 IsReadOnly="True"
                  IsHitTestVisible="False"
                  SelectionHighlightColor="Transparent"
                  HorizontalAlignment="Stretch"
-                 VerticalAlignment="Top"  
+                 VerticalAlignment="Top"
                  Grid.Column="0"
-
-                 />
+                 Grid.Row="0" />
         <Button Name="FilePathSelectButton"
-                Content="Choose File" Click="FilePathSelectButton_Click"
+                Content="Choose File"
+                Click="FilePathSelectButton_Click"
                 HorizontalAlignment="Right"
-                VerticalAlignment="Top"  
-                Grid.Column="1"/>
-
+                VerticalAlignment="Top"
+                Grid.Column="1"
+                Grid.Row="0" />
+        <Button Name="ProcessFileButton"
+                Content="Process"
+                Click="ProcessFileButton_Click"
+                HorizontalAlignment="Center"
+                Grid.Row="1"
+                Grid.ColumnSpan="2" />
+        <TextBlock Name="LoadingTextBlock" Grid.Row="2">
+            
+        </TextBlock>
     </Grid>
 </Window>

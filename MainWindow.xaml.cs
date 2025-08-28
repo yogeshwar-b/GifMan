@@ -1,10 +1,17 @@
+using FFMpegCore;
+using FFMpegCore.Enums;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Drawing;
+using System.IO;
 using System.Threading.Tasks;
 using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.Pickers;
+using Windows.UI.Popups;
+using Windows.UI.ViewManagement;
 using WinRT.Interop;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -30,6 +37,14 @@ namespace GifMan
                 var displayArea = DisplayArea.GetFromWindowId(windowId, DisplayAreaFallback.Primary);
                 appWindow.Resize(new SizeInt32(displayArea.WorkArea.Width / 2, displayArea.WorkArea.Height / 2));
             }
+
+
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                FilePathTextBox.Text = @"D:\Dev\Projects\GifMan\TestVideos\Big_Buck_Bunny_1080_10s_30MB.mkv";
+            }
+
+
         }
 
         private async void FilePathSelectButton_Click(object sender, RoutedEventArgs e)
@@ -50,6 +65,35 @@ namespace GifMan
             else
             {
                 FilePathTextBox.Text = "No file selected";
+            }
+        }
+
+        private async void ProcessFileButton_Click(object sender, RoutedEventArgs e)
+        {
+            string outputPath = Path.GetDirectoryName(FilePathTextBox.Text) ?? String.Empty;
+            if (!string.IsNullOrEmpty(outputPath))
+            {
+                LoadingTextBlock.Text = "Processing....";
+                var mediaInfo = await FFProbe.AnalyseAsync(FilePathTextBox.Text);
+                TimeSpan totalDuration = mediaInfo.Duration;
+                await FFMpegArguments
+                      .FromFileInput(FilePathTextBox.Text)
+                      .OutputToFile(outputPath + "/output_%04d.png", overwrite: true, options => options
+                          .WithCustomArgument("-vf fps=30")   // apply fps filter
+                          .ForceFormat("image2"))
+                        .NotifyOnProgress(progress =>
+                        {
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                LoadingTextBlock.Text = ($"Progress: {progress}%");
+                            });
+                        }, totalDuration)
+                                                    .ProcessAsynchronously();
+
+                LoadingTextBlock.Text = "Done.";
+
+
+
             }
         }
     }
