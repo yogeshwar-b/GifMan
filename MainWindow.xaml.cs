@@ -1,19 +1,19 @@
 using FFMpegCore;
 using FFMpegCore.Enums;
+using FFMpegCore.Pipes;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.Pickers;
-using Windows.UI.Popups;
-using Windows.UI.ViewManagement;
 using WinRT.Interop;
-
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
@@ -41,7 +41,7 @@ namespace GifMan
 
             if (System.Diagnostics.Debugger.IsAttached)
             {
-                FilePathTextBox.Text = @"D:\Dev\Projects\GifMan\TestVideos\Big_Buck_Bunny_1080_10s_30MB.mkv";
+                FilePathTextBox.Text = @"C:\Dev\Projects\GifMan\Project\GifMan\TestVideos\salaar_axe.mp4";
             }
 
 
@@ -71,30 +71,76 @@ namespace GifMan
         private async void ProcessFileButton_Click(object sender, RoutedEventArgs e)
         {
             string outputPath = Path.GetDirectoryName(FilePathTextBox.Text) ?? String.Empty;
-            if (!string.IsNullOrEmpty(outputPath))
+
+            await CreateGif(
+                    FilePathTextBox.Text,
+                    Path.Combine(Path.GetDirectoryName(FilePathTextBox.Text), "output.gif"),
+                    LoadingTextBlock,
+                    this.DispatcherQueue);
+
+
+        }
+
+        public static async Task CreateGif(string inputFile, string outputGif, TextBlock loadingBlock, DispatcherQueue dispatcher)
+        {
+            var mediaInfo = await FFProbe.AnalyseAsync(inputFile);
+            TimeSpan totalDuration = mediaInfo.Duration;
+
+            int width = mediaInfo.PrimaryVideoStream.Width;
+            int height = mediaInfo.PrimaryVideoStream.Height;
+            int frameSize = width * height * 4;
+
+            var settings = new GifskiNative.GifskiSettings
             {
-                LoadingTextBlock.Text = "Processing....";
-                var mediaInfo = await FFProbe.AnalyseAsync(FilePathTextBox.Text);
-                TimeSpan totalDuration = mediaInfo.Duration;
-                await FFMpegArguments
-                      .FromFileInput(FilePathTextBox.Text)
-                      .OutputToFile(outputPath + "/output_%04d.png", overwrite: true, options => options
-                          .WithCustomArgument("-vf fps=30")   // apply fps filter
-                          .ForceFormat("image2"))
-                        .NotifyOnProgress(progress =>
-                        {
-                            DispatcherQueue.TryEnqueue(() =>
-                            {
-                                LoadingTextBlock.Text = ($"Progress: {progress}%");
-                            });
-                        }, totalDuration)
-                                                    .ProcessAsynchronously();
+                quality = 90,
+                fast = false,
+                repeat = 0
+            };
+            IntPtr encoder = GifskiNative.gifski_new(ref settings);
+            GifskiNative.gifski_set_file_output(encoder, outputGif);
 
-                LoadingTextBlock.Text = "Done.";
+            var ms = new MemoryStream();
+            var sink = new StreamPipeSink(ms);
 
+            await FFMpegArguments
+                .FromFileInput(inputFile)
+                .OutputToPipe(sink, options => options
+                    .WithCustomArgument("-vf fps=30")
+                    .WithCustomArgument("-f rawvideo")
+                    .WithCustomArgument("-pix_fmt rgba"))
+                .NotifyOnProgress(progress =>
+                {
+                    dispatcher?.TryEnqueue(() =>
+                    {
+                        loadingBlock.Text = $"Progress: {progress}%";
+                    });
+                }, totalDuration)
+                .ProcessAsynchronously();
 
+            ms.Position = 0;
+            byte[] buffer = new byte[frameSize];
+            uint frameNumber = 0;
 
+            while (ms.Read(buffer, 0, frameSize) == frameSize)
+            {
+                double pts = frameNumber / 30.0;
+                GifskiNative.gifski_add_frame_rgba(
+                    encoder,
+                    frameNumber,
+                    (uint)width,
+                    (uint)height,
+                    buffer,
+                    pts
+                );
+                frameNumber++;
             }
+
+            GifskiNative.gifski_finish(encoder);
+
+            dispatcher?.TryEnqueue(() =>
+            {
+                loadingBlock.Text = "Done.";
+            });
         }
     }
 }
